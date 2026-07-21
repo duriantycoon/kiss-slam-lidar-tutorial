@@ -79,7 +79,7 @@ cd ~
 
 ---
 
-## Terminal 2 — Network setup (only if Terminal 1 says `bind failed`)
+## Terminal 2 — Network setup 
 
 The MID360 lives on `192.168.1.x`. Your wired Ethernet port needs a static IP on that
 subnet — this doesn't persist across reboots, so redo it each session.
