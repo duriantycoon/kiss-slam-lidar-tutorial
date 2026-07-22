@@ -30,7 +30,7 @@ Now source the install and launch. This must be done from `livox_ros_driver2` (o
 level above `launch_ROS2`), since the install path is relative:
 
 ```bash
-source install/setup.sh
+source ../../install/setup.sh
 cd launch_ROS2
 ros2 launch livox_ros_driver2 rviz_MID360_launch.py
 ```
