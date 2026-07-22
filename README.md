@@ -137,11 +137,19 @@ then re-run the `ros2 launch` command from Terminal 1.
 
 Only start this once Terminal 1 has shown `livox/lidar publish use PointCloud2 format`.
 
+**Directory:** `~/`
+
+```bash
+source ~/slam_ws/install/setup.bash
+cd ~/slam_ws
+```
+
 **Directory:** `~/slam_ws`
 
 ```bash
 cd ~/slam_ws
 source /opt/ros/jazzy/setup.bash
+source install/setup.bash
 ros2 launch kiss_slam_ros slam.launch.py \
   topic:=/livox/lidar \
   visualize:=true \
@@ -171,6 +179,17 @@ QoS mismatch warnings on these topics are expected and harmless — SLAM still r
 **Shutdown:** `Ctrl+C` once and let it terminate on its own (ROS escalates
 SIGINT → SIGTERM → SIGKILL automatically over ~15s if needed). A `rcl_shutdown already
 called` error during shutdown is a known harmless quirk — not a real problem.
+
+Results: Functional Kiss-Slam Map with LiDAR Sensor
+
+<img width="1920" height="1197" alt="Screenshot from 2026-07-22 09-40-01" src="https://github.com/user-attachments/assets/0a78e7ce-34bd-43b0-a126-ecfaef24516d" />
+
+
+<img width="1920" height="1197" alt="Screenshot from 2026-07-22 09-49-29" src="https://github.com/user-attachments/assets/6a52ba18-9378-4e9e-b2c5-2c48ae8adb80" />
+
+
+<img width="1920" height="1197" alt="Screenshot from 2026-07-22 09-49-39" src="https://github.com/user-attachments/assets/5447c569-bd54-4c74-b004-eb96a2e88b39" />
+
 
 ---
 
