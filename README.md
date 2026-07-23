@@ -191,6 +191,8 @@ Results: Functional Kiss-Slam Map with LiDAR Sensor
 <img width="1920" height="1197" alt="Screenshot from 2026-07-22 09-49-39" src="https://github.com/user-attachments/assets/5447c569-bd54-4c74-b004-eb96a2e88b39" />
 
 
+<img width="1395" height="874" alt="image" src="https://github.com/user-attachments/assets/3e5960ea-b113-4bfa-826c-acb3dbc1346a" />
+
 ---
 
 ## Quick recap
