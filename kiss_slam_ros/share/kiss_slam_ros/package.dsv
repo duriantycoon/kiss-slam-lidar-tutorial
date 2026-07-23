@@ -1,0 +1,9 @@
+source;share/kiss_slam_ros/hook/pythonpath.ps1
+source;share/kiss_slam_ros/hook/pythonpath.dsv
+source;share/kiss_slam_ros/hook/pythonpath.sh
+source;share/kiss_slam_ros/hook/ament_prefix_path.ps1
+source;share/kiss_slam_ros/hook/ament_prefix_path.dsv
+source;share/kiss_slam_ros/hook/ament_prefix_path.sh
+source;../../build/kiss_slam_ros/share/kiss_slam_ros/hook/pythonpath_develop.ps1
+source;../../build/kiss_slam_ros/share/kiss_slam_ros/hook/pythonpath_develop.dsv
+source;../../build/kiss_slam_ros/share/kiss_slam_ros/hook/pythonpath_develop.sh
