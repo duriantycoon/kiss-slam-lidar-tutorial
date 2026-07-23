@@ -1,315 +1,178 @@
-# 1. Introduction
+# Livox MID360 + KISS-SLAM (ROS2 Jazzy) Startup Guide
 
-Livox SDK2 is a software development kit designed for all Livox lidars such as HAP and Mid-360. It is developed based on C/C++ following Livox SDK2 Communication Protocol, and provides easy-to-use C style APIs. With the Livox SDK2, users can quickly connect to the Livox Lidars and receive point cloud data.
+Three terminals, run in this order. Note: Terminal 1 will fail with bind failed the first time unless Terminal 2's network setup has already been done — read through once before starting.
 
-Livox SDK2 consists of [Livox SDK2 core code](sdk_core/), [Livox SDK2 APIs](include/livox_lidar_api.h) and three [samples](samples/).
+## Terminal 1 — Livox driver + RViz
 
-## Livox SDK2 API
+Starts the driver that talks to the physical lidar and publishes its data as ROS2 topics.
 
-Livox SDK2 API provides a set of C-style APIs, which can be conveniently integrated in C/C++ programs. Please refer to the **[Livox SDK2 APIs](include/livox_lidar_api.h)**.
+Directory: `~/ws_livox/src/livox_ros_driver2`
 
-## Livox SDK2 Communication Protocol
-
-Livox SDK2 communication protocol opens to all users. It is the communication protocol between user programs and livox products. The protocol consists of control commands and data format, please refer to the documents below:
-
-**Mid-360(S)**:
-
-* [Mid-360(S) Communication protocol](https://livox-wiki-cn.readthedocs.io/zh_CN/latest/tutorials/new_product/mid360/mid360.html) (中文)
-* [Mid-360(S) Communication protocol](https://livox-wiki-en.readthedocs.io/en/latest/tutorials/new_product/mid360/mid360.html) (English)
-
-**HAP(TX/T1)**:
-
-* [HAP Communication protocol](<https://github.com/Livox-SDK/Livox-SDK2/wiki/Livox-SDK-Communication-Protocol-HAP>) (中文)
-* [HAP Communication protocol](<https://github.com/Livox-SDK/Livox-SDK2/wiki/Livox-SDK-Communication-Protocol-HAP(English)>) (English)
-
-
-# 2. Installation
-
-## 2.1 Prerequisites
-
-* OS:
-  * Linux: Ubuntu 18.04 or above
-  * Windows 10 / 11
-
-* Tools:
-  * compilers that support C++11
-  * cmake 3.0+
-
-* Arch:
-  * x86
-  * ARM
-## 2.2 Instruction for Ubuntu 20.04
-
-1. Dependencies:
-
-* [CMake 3.0.0+](https://cmake.org/)
-* gcc 4.8.1+
-
-2. Install the **CMake** using apt:
-
-```shell
-$ sudo apt install cmake
+```bash
+cd ~/ws_livox/src/livox_ros_driver2
+source /opt/ros/jazzy/setup.bash
+./build.sh jazzy
 ```
 
-3. Compile and install the Livox-SDK2:
+Only re-run `./build.sh` after pulling new code or changing config — not every launch. A successful build ends with:
 
-```shell
-$ git clone https://github.com/Livox-SDK/Livox-SDK2.git
-$ cd ./Livox-SDK2/
-$ mkdir build
-$ cd build
-$ cmake .. && make -j
-$ sudo make install
+```
+Finished <<< livox_ros_driver2 [15.0s]
+Summary: 1 package finished [15.1s]
 ```
 
-**Note :**  
-The generated shared library and static library are installed to the directory of "/usr/local/lib". The header files are installed to the directory of "/usr/local/include".
+Now source the install and launch. This must be done from `livox_ros_driver2` (one level above `launch_ROS2`), since the install path is relative:
 
-Tips: Remove Livox SDK2:
-
-```shell
-$ sudo rm -rf /usr/local/lib/liblivox_lidar_sdk_*
-$ sudo rm -rf /usr/local/include/livox_lidar_*
+```bash
+source ../../install/setup.sh
+cd launch_ROS2
+ros2 launch livox_ros_driver2 rviz_MID360_launch.py
 ```
 
-## 2.3 Instruction for Windows 10
+If the network isn't set up yet, you'll see:
 
-1. Dependencies:
-
-* Visual Studio 2019
-* [CMake 3.0.0+](https://cmake.org/)
-
-2. Preparation:
-
-```cmd
-> git clone https://github.com/Livox-SDK/Livox-SDK2.git
-> cd Livox-SDK2
-> md build && cd build
+```
+[livox_ros_driver2_node-1] bind failed
+[livox_ros_driver2_node-1] Failed to init livox lidar sdk.
 ```
 
-3. Generate a project
-* 64-bit project:
+Go do Terminal 2, then come back here.
 
-```cmd
-> cmake .. -G "Visual Studio 16 2019" -A x64
+Before relaunching, always clear out any leftover process first — this is the single most useful command in this whole workflow, since Ctrl+C can leave the driver hanging:
+
+```bash
+pkill -f livox_ros_driver2_node
 ```
 
-* 32-bit project:
+Success looks like:
 
-```cmd
-> cmake .. -G "Visual Studio 16 2019" -A Win32
+```
+[livox_ros_driver2_node-1] [INFO] [livox_lidar_publisher]: Init lds lidar success!
+[livox_ros_driver2_node-1] successfully set lidar attitude, ip: 192.168.1.145
+[livox_ros_driver2_node-1] successfully enable Livox Lidar imu, ip: 192.168.1.145
+[livox_ros_driver2_node-1] [INFO] [livox_lidar_publisher]: livox/imu publish use imu format
+[livox_ros_driver2_node-1] [INFO] [livox_lidar_publisher]: livox/lidar publish use PointCloud2 format
 ```
 
-4. Compiling:
+Once you see `livox/lidar publish use PointCloud2 format`, move on to Terminal 3.
 
-You can now compile the Livox-SDK2 in Visual Studio 2019.
+You may also see a QoS warning once RViz/SLAM connect — harmless, just a mismatch in delivery-strictness settings between nodes:
 
-
-# 3. Run the Samples
-
-Livox SDK2 includes three samples, which are "livox_lidar_quick_start", "logger" and "multi_lidars_upgrade".
-
-## 3.1 Livox lidar quick start sample
-
-### In Ubuntu 20.04
-
-Connect to the Lidar(s), and run the program '**livox_lidar_quick_start**' :
-
-```shell
-$ cd samples/livox_lidar_quick_start && ./livox_lidar_quick_start ../../../samples/livox_lidar_quick_start/[config file]
+```
+[rviz2-2] [WARN] [rviz]: New publisher discovered on topic '/odometry', offering incompatible QoS.
 ```
 
-### In Windows 10
-After compiling the Livox SDK2 as shown in Installation above, you can find '**livox_lidar_quick_start.exe**' in the directory of '**Livox-SDK2\\build\\samples\\livox_lidar_quick_start\\Debug(or Release)\\**'.
+Shortcut: a script in the home directory (`~`) wraps build + source + launch:
 
-Copy the config file '**Livox-SDK2\\samples\\livox_lidar_quick_start\\[config file]**' into the directory containing the program '**livox_lidar_quick_start.exe**', and run:
-
-
-```cmd
-> livox_lidar_quick_start.exe [config file]
+```bash
+cd ~
+./lidar_ros_setup.sh
 ```
 
-Then you can see the information as below:
+## Terminal 2 — Network setup
 
-```shell
-> [info] Data Handle Init Succ.  [data_handler.cpp] [Init] [42]
-> [info] Create detection channel detection socket:0  [device_manager.cpp] [CreateDetectionChannel] [232]
+The MID360 lives on `192.168.1.x`. Your wired Ethernet port needs a static IP on that subnet — this doesn't persist across reboots, so redo it each session.
+
+Directory: anywhere (`~` is fine)
+
+Check current IPs — if only a wifi address shows up, the wired port has no IP yet:
+
+```bash
+hostname -I
 ```
 
-**Note** : 
-1. [config file] in the command above represents the config file name, you can choose different config file depends on your needs.
+Find the wired interface name (ignore `wlp2s0` / anything labeled wireless):
 
-## 3.2 Logger sample
-
-### Parameters Configuration
-
-| Parameter    | Detailed description                                         | Default |
-| ------------ | ------------------------------------------------------------ | ------- |
-| lidar_log_enable | Enable or disable lidar logger. <br>Logger is enabled by default. | true    |
-| lidar_log_cache_size_MB  | Set lidar log cache size. The unit is MB .<br> | 500       |
-| lidar_log_path  | Set the save path of lidar log file.<br>The log file is saved in the current path by default.  | "./"       |
-
-These Parameters are located in hap_config.json / mid360_config.json files.
-
-### Run the 'logger' in Ubuntu 20.04
-
-Connect to the Lidar(s), and run the program '**logger**' :
-
-```shell
-$ cd samples/logger && ./logger ../../../samples/logger/[config file]
+```bash
+ip link show
 ```
 
-### Run the 'logger' in Windows 10
+Bring it up and assign it an address (replace `enx00e04c680ede` with your interface name):
 
-After compiling the Livox SDK2 as shown in Installation above, you can find '**logger.exe**' in the directory of '**Livox-SDK2\\build\\samples\\logger\\Debug(or Release)\\**'.
-
-Copy the config file '**Livox-SDK2\\samples\\logger\\[config file]**' into the directory containing the program '**logger.exe**', and run:
-
-
-```cmd
-> logger.exe [config file]
+```bash
+sudo ip link set enx00e04c680ede up
+sudo ip addr add 192.168.1.50/24 dev enx00e04c680ede
 ```
 
-**Note** : 
-1. [config file] in the command above represents the config file name, you can choose different config file depends on your needs.
+Confirm it took:
 
-## 3.3 Multi-lidars upgrade sample
-
-### in Ubuntu 20.04
-
-Connect to the Lidar(s), and run the program '**multi_lidars_upgrade**' :
-
-```shell
-$ cd samples/multi_lidars_upgrade && ./multi_lidars_upgrade ../../../samples/[config file] [firmware file path]
-```
-After executing the above command, Lidar stops and the firmware upgrade starts. 
-The Lidar(s) upgrade takes a while and the upgrade progress is printed on termial. Also "upgrade successfully" will be printed on terminal when finishing upgrading.
-
-### in Windows 10
-After compiling the Livox SDK2 as shown in Installation above, you can find '**multi_lidars_upgrade.exe**' in the directory of '**Livox-SDK2\\build\\samples\\multi_lidars_upgrade\\Debug(or Release)\\**'.
-
-Copy the config file '**Livox-SDK2\\samples\\multi_lidars_upgrade\\[config file]**' and firmware file into the directory containing the program '**multi_lidars_upgrade.exe**', and run:
-
-```cmd
-> multi_lidars_upgrade.exe [config file] [firmware file name]
+```bash
+ip addr show enx00e04c680ede
+hostname -I
 ```
 
+`hostname -I` should now show both your wifi and wired addresses.
 
-**Note** : 
-1. [config file] in the command above represents the config file name, you can choose different config file depends on your needs.
+Verify with a ping:
 
-# 4. Config file
-## 4.1 Basic Configuration
-Here is a basic config sample with all REQUIRED fields:
-```json
-{
-  "HAP": {
-    "lidar_net_info" : {
-      "cmd_data_port"  : 56000,
-      "push_msg_port"  : 0,
-      "point_data_port": 57000,
-      "imu_data_port"  : 58000,
-      "log_data_port"  : 59000
-    },
-    "host_net_info" : [
-      {
-        "lidar_ip"       : ["192.168.1.10","192.168.1.11","192.168.1.12", "192.168.1.13"],
-        "host_ip"        : "192.168.1.5",
-        "cmd_data_port"  : 56000,
-        "push_msg_port"  : 0,
-        "point_data_port": 57000,
-        "imu_data_port"  : 58000,
-        "log_data_port"  : 59000
-      }
-    ]
-  }
-}
+```bash
+ping 192.168.1.50
 ```
-### Description for REQUIRED fields  
-* "HAP": Lidar type, meaning the following configuration is for HAP lidar type; Another option is "MID360", for configuration of MID-360 lidar type.
-  * "lidar_net_info": set the ports in the lidar.
-    * "cmd_data_port": port for sending / receiving control command.
-    * "push_msg_port": port for sending push message.
-    * "point_data_port": port for sending point cloud data.
-    * "imu_data_port": port for sending imu data.
-    * "log_data_port": port for sending firmware log data.
-  * "host_net_info": set the configuration of the host machines, and the value is a list, meaning that you can configure several hosts.
-    * "lidar_ip": this is a list, indicating all ips of the lidars intended to connect to this host.
-    * "host_ip": the ip of the host you're configuring.
-    * "cmd_data_port": port for sending / receiving control command.
-    * "push_msg_port" port for receiving push message.
-    * "point_data_port": port for receiving point cloud data.
-    * "imu_data_port": port for receiving imu data.
-    * "log_data_port": port for receiving firmware log data.
 
+If it fails, re-run the `ip addr add` command and ping again — sometimes the interface needs a moment to settle.
 
-## 4.2 Full Configuration
-Here is a full sample including multi-lidar types configurations and some OPTIONAL fields:
-```json
-{
-  "master_sdk" : true,
-  "lidar_log_enable"        : true,
-  "lidar_log_cache_size_MB" : 500,
-  "lidar_log_path"          : "./",
+Once ping succeeds, go back to Terminal 1, clear any leftover process, and relaunch:
 
-  "HAP": {
-    "lidar_net_info" : {
-      "cmd_data_port"  : 56000,
-      "push_msg_port"  : 0,
-      "point_data_port": 57000,
-      "imu_data_port"  : 58000,
-      "log_data_port"  : 59000
-    },
-    "host_net_info" : [
-      {
-        "lidar_ip"       : ["192.168.1.10","192.168.1.11","192.168.1.12", "192.168.1.13"],
-        "host_ip"        : "192.168.1.5",
-        "multicast_ip"   : "224.1.1.5",
-        "cmd_data_port"  : 56000,
-        "push_msg_port"  : 0,
-        "point_data_port": 57000,
-        "imu_data_port"  : 58000,
-        "log_data_port"  : 59000
-      }
-    ]
-  },
-  "MID360": {
-    "lidar_net_info" : {
-      "cmd_data_port"  : 56100,
-      "push_msg_port"  : 56200,
-      "point_data_port": 56300,
-      "imu_data_port"  : 56400,
-      "log_data_port"  : 56500
-    },
-    "host_net_info" : [
-      {
-        "lidar_ip"       : ["192.168.1.3"],
-        "host_ip"        : "192.168.1.5",
-        "multicast_ip"   : "224.1.1.5",
-        "cmd_data_port"  : 56101,
-        "push_msg_port"  : 56201,
-        "point_data_port": 56301,
-        "imu_data_port"  : 56401,
-        "log_data_port"  : 56501
-      }
-    ]
-  }
-}
+```bash
+pkill -f livox_ros_driver2_node
 ```
-### Description for OPTIONAL fields
-* "master_sdk": used in multi-casting scenario. 
-  * 'true' stands for master SDK and 'false' stands for slave SDK;
-  * 'master SDK' can send control command to and receive data from the lidars, while 'slave SDK' can only receive point cloud data from the lidars.
-  * NOTICE: ONLY ONE SDK (host) can be set as 'master SDK'. Others should be set as 'slave SDK'.
-* "lidar_log_enable": 'true' or 'false' represents whether to enable the firmware log.
-* "lidar_log_cache_size_MB": set the storage size for firmware log, unit: MB.
-* "lidar_log_path": set the path to store the firmware log data.
-* "multicast_ip": this field is in the parent key "host_net_info", representing the multi-casting IP.
 
-# 5. Support
+then re-run the `ros2 launch` command from Terminal 1.
 
-You can get support from Livox via:
+## Terminal 3 — KISS-SLAM
 
-* Send an email to cs@livoxtech.com, appended with detailed description for your problem and your setup;
-* Raise a github issue
+Only start this once Terminal 1 has shown `livox/lidar publish use PointCloud2 format`.
 
+Directory: `~/`
+
+```bash
+source ~/slam_ws/install/setup.bash
+cd ~/slam_ws
+```
+
+Directory: `~/slam_ws`
+
+```bash
+cd ~/slam_ws
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 launch kiss_slam_ros slam.launch.py \
+  topic:=/livox/lidar \
+  visualize:=true \
+  use_sim_time:=true
+```
+
+`topic:=/livox/lidar` must match the topic the driver is publishing (confirmed in Terminal 1's log).
+
+Success looks like:
+
+```
+[odometry_node-2] [INFO] [odometry_node]: KISS-ICP ROS2 node configured successfully.
+[odometry_node-2] [INFO] [odometry_node]: Odometry Node initialized. Waiting for data...
+[slam_node-1] [INFO] [slam_node]: SLAM node initialized and waiting for keyframes.
+```
+
+RViz opens subscribed to `/global_voxel_map`, `/deskewed_points`, `/odometry`, and `/global_pose`.
+
+QoS mismatch warnings on these topics are expected and harmless — SLAM still runs fine:
+
+```
+[slam_node-1] [WARN] [slam_node]: New subscription discovered on topic 'global_voxel_map', requesting incompatible QoS.
+```
+
+Shutdown: Ctrl+C once and let it terminate on its own (ROS escalates SIGINT → SIGTERM → SIGKILL automatically over ~15s if needed). A `rcl_shutdown already called` error during shutdown is a known harmless quirk — not a real problem.
+
+## Results: Functional Kiss-Slam Map with LiDAR Sensor
+
+Screenshot from 2026-07-22 09-40-01
+Screenshot from 2026-07-22 09-49-29
+Screenshot from 2026-07-22 09-49-39
+image
+
+## Quick recap
+
+1. **Terminal 1** (`~/ws_livox/src/livox_ros_driver2`): source ROS2 → `./build.sh jazzy` → `source install/setup.sh` → `cd launch_ROS2` → `ros2 launch livox_ros_driver2 rviz_MID360_launch.py`. `bind failed` → go to step 2.
+2. **Terminal 2**: `ip link show` to find your wired interface → `sudo ip link set <interface> up` → `sudo ip addr add 192.168.1.50/24 dev <interface>` → confirm with `ping 192.168.1.50` → back to Terminal 1: `pkill -f livox_ros_driver2_node` → relaunch.
+3. **Terminal 3** (`~/slam_ws`), once Terminal 1 is publishing: source ROS2 → `ros2 launch kiss_slam_ros slam.launch.py topic:=/livox/lidar visualize:=true use_sim_time:=true`.
+
+Remember: `pkill -f livox_ros_driver2_node` clears a stuck driver process any time a launch looks hung or a previous shutdown didn't fully complete.
